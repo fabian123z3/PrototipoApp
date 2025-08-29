@@ -1,75 +1,108 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import React, { useState } from 'react';
+import { StyleSheet, View, Button, Alert, Text } from 'react-native';
+import * as Location from 'expo-location';
 
 export default function HomeScreen() {
+  const [punchType, setPunchType] = useState<'Entrada' | 'Salida' | null>(null);
+  
+  const handleRegistration = async () => {
+    try {
+      const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
+      if (locationStatus !== 'granted') {
+        Alert.alert('Permiso de ubicación denegado', 'Por favor, habilita los permisos de ubicación para usar esta función.');
+        return;
+      }
+
+      const currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+      const address = await Location.reverseGeocodeAsync({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude
+      });
+      
+      const time = new Date().toLocaleString();
+      const lat = currentLocation.coords.latitude;
+      const lon = currentLocation.coords.longitude;
+      const street = address[0]?.street || 'No disponible';
+      const streetNumber = address[0]?.streetNumber || 'No disponible';
+      const city = address[0]?.city || 'No disponible';
+
+      let message = `Tipo: ${punchType}\nHora: ${time}\nDirección: ${street} ${streetNumber}, ${city}\nLatitud: ${lat}\nLongitud: ${lon}`;
+
+      Alert.alert(
+        `Registro de Asistencia`,
+        message
+      );
+    } catch (error) {
+      Alert.alert('Error de ubicación', 'No se pudo obtener la ubicación. Asegúrate de que los servicios de ubicación están activados.');
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={styles.container}>
+      <Text style={styles.title}>Registro de Asistencia</Text>
+      <Text style={styles.subtitle}>
+        Selecciona para registrar tu entrada o salida.
+      </Text>
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Entrada"
+          onPress={() => {
+            setPunchType('Entrada');
+            handleRegistration();
+          }}
+          color="#28a745" // Color verde
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <Button
+          title="Salida"
+          onPress={() => {
+            setPunchType('Salida');
+            handleRegistration();
+          }}
+          color="#dc3545" // Color rojo
+        />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#fff', 
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  optionsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  scannerContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    width: '100%',
+  },
+  scannerText: {
+    fontSize: 18,
+    textAlign: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    color: 'white',
+    padding: 10,
+  }
 });
